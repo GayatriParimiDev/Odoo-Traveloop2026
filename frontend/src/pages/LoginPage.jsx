@@ -120,16 +120,7 @@ export default function LoginPage() {
             </span>
           </button>
 
-          <div className="divider">
-            <span>Or continue with</span>
-          </div>
 
-          <button className="secondary-button" type="button" disabled={loading}>
-            <span className="google-mark" aria-hidden="true">
-              G
-            </span>
-            <span>Google</span>
-          </button>
         </form>
 
         <p className="footer-copy">
