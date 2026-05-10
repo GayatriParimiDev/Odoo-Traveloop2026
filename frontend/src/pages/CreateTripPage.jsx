@@ -34,7 +34,7 @@ export default function CreateTripPage() {
         description: form.description,
       });
 
-      navigate(`/trips?created=${response.data.id}`, { replace: true });
+      navigate(`/itinerary-builder?tripId=${response.data.id}`, { replace: true });
     } catch (err) {
       setError(err.message || 'Failed to create trip');
     } finally {

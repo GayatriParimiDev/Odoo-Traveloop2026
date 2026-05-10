@@ -64,6 +64,22 @@ export function createTrip(arg1, arg2) {
   });
 }
 
+export function updateTrip(token, id, data) {
+  return request(`/trips/${id}`, {
+    method: 'PUT',
+    token,
+    body: data,
+  });
+}
+
+export function createStop(tripId, data, token) {
+  return request(`/trips/${tripId}/stops`, {
+    method: 'POST',
+    token,
+    body: data,
+  });
+}
+
 export function getCities(params = {}) {
   const searchParams = new URLSearchParams();
 

@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppIcon from '../components/AppIcon';
 import ScreenFrame from '../components/ScreenFrame';
-import { createTrip, getTrip } from '../api';
+import { createStop, createTrip, getCities, getTrip, getTripStops, updateTrip } from '../api';
 
 const STORAGE_KEY = 'traveloop_access_token';
 
-const DEFAULT_FORM = {
+const DEFAULT_TRIP_FORM = {
   title: '',
   description: '',
   trip_type: 'solo',
@@ -14,6 +14,16 @@ const DEFAULT_FORM = {
   end_date: '',
   cover_image: '/images/dashboard_background.png',
   visibility: 'private',
+};
+
+const DEFAULT_STOP_FORM = {
+  city_id: '',
+  city_name: '',
+  arrival_date: '',
+  departure_date: '',
+  hotel_name: '',
+  stay_type: 'hotel',
+  notes: '',
 };
 
 const previewStops = [
@@ -28,15 +38,85 @@ function readToken() {
   return localStorage.getItem(STORAGE_KEY) || '';
 }
 
+function formatDateRange(startDate, endDate) {
+  if (!startDate || !endDate) {
+    return 'Dates not set';
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return 'Dates not set';
+  }
+
+  return (
+    new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(start) +
+    ' - ' +
+    new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(end)
+  );
+}
+
+function formatStopRange(stop) {
+  if (!stop?.arrival_date || !stop?.departure_date) {
+    return 'Dates not set';
+  }
+
+  return formatDateRange(stop.arrival_date, stop.departure_date);
+}
+
+function stopLabel(stop) {
+  if (!stop) {
+    return '';
+  }
+
+  const city = stop.city_name || stop.city?.city_name || 'City';
+  const country = stop.country || stop.city?.country || '';
+  return country ? `${city}, ${country}` : city;
+}
+
+function isAuthError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('unauthorized') || message.includes('invalid token');
+}
+
 export default function ItineraryBuilderPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [form, setForm] = useState(DEFAULT_FORM);
-  const [loading, setLoading] = useState(false);
+  const tripId = searchParams.get('tripId') || '';
+
+  const [tripForm, setTripForm] = useState(DEFAULT_TRIP_FORM);
+  const [stopForm, setStopForm] = useState(DEFAULT_STOP_FORM);
   const [loadingTrip, setLoadingTrip] = useState(false);
+  const [loadingStops, setLoadingStops] = useState(false);
+  const [savingTrip, setSavingTrip] = useState(false);
+  const [savingStop, setSavingStop] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+  const [cityResults, setCityResults] = useState([]);
+  const [citySearchLoading, setCitySearchLoading] = useState(false);
+  const [trip, setTrip] = useState(null);
+  const [stops, setStops] = useState([]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [editMode, setEditMode] = useState(false);
+  const [stopError, setStopError] = useState('');
+  const [stopNotice, setStopNotice] = useState('');
+
+  const editMode = Boolean(tripId);
+
+  const tripLength = useMemo(() => {
+    if (!tripForm.start_date || !tripForm.end_date) {
+      return 0;
+    }
+
+    const start = new Date(tripForm.start_date);
+    const end = new Date(tripForm.end_date);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return 0;
+    }
+
+    return Math.max(1, Math.round((end - start) / 86400000) + 1);
+  }, [tripForm.end_date, tripForm.start_date]);
 
   useEffect(() => {
     const token = readToken();
@@ -45,101 +125,236 @@ export default function ItineraryBuilderPage() {
       return;
     }
 
-    const tripId = searchParams.get('tripId');
     if (!tripId) {
+      setTrip(null);
+      setStops([]);
+      setTripForm(DEFAULT_TRIP_FORM);
+      setStopForm(DEFAULT_STOP_FORM);
+      setCitySearch('');
+      setCityResults([]);
+      setError('');
+      setStopError('');
+      setNotice('');
+      setStopNotice('');
       return;
     }
 
     let active = true;
 
-    async function loadTrip() {
+    async function loadTripAndStops() {
       setLoadingTrip(true);
+      setLoadingStops(true);
       setError('');
+      setStopError('');
 
       try {
-        const res = await getTrip(token, tripId);
+        const [tripRes, stopsRes] = await Promise.all([getTrip(token, tripId), getTripStops(tripId, token)]);
         if (!active) {
           return;
         }
 
-        const trip = res.data;
-        setEditMode(true);
-        setForm({
-          title: trip.title || '',
-          description: trip.description || '',
-          trip_type: trip.trip_type || 'solo',
-          start_date: trip.start_date || '',
-          end_date: trip.end_date || '',
-          cover_image: trip.cover_image || '/images/dashboard_background.png',
-          visibility: trip.visibility || 'private',
+        const nextTrip = tripRes.data;
+        setTrip(nextTrip);
+        setTripForm({
+          title: nextTrip.title || '',
+          description: nextTrip.description || '',
+          trip_type: nextTrip.trip_type || 'solo',
+          start_date: nextTrip.start_date || '',
+          end_date: nextTrip.end_date || '',
+          cover_image: nextTrip.cover_image || '/images/dashboard_background.png',
+          visibility: nextTrip.visibility || 'private',
         });
+        setStops(stopsRes.data || []);
         setNotice('Editing existing trip');
       } catch (err) {
-        if (active) {
-          setError(err.message || 'Unable to load trip');
+        if (!active) {
+          return;
         }
+
+        if (isAuthError(err)) {
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem('traveloop_refresh_token');
+          localStorage.removeItem('traveloop_user');
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        setError(err.message || 'Unable to load trip');
       } finally {
         if (active) {
           setLoadingTrip(false);
+          setLoadingStops(false);
         }
       }
     }
 
-    loadTrip();
+    loadTripAndStops();
 
     return () => {
       active = false;
     };
-  }, [navigate, searchParams]);
+  }, [navigate, tripId]);
 
-  function handleChange(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+  useEffect(() => {
+    if (!tripId || citySearch.trim().length < 2) {
+      setCityResults([]);
+      setCitySearchLoading(false);
+      return;
+    }
+
+    let active = true;
+
+    async function loadCities() {
+      setCitySearchLoading(true);
+
+      try {
+        const res = await getCities({ search: citySearch.trim(), limit: 6 });
+        if (!active) {
+          return;
+        }
+
+        setCityResults(res.data || []);
+      } catch {
+        if (active) {
+          setCityResults([]);
+        }
+      } finally {
+        if (active) {
+          setCitySearchLoading(false);
+        }
+      }
+    }
+
+    const timeoutId = window.setTimeout(loadCities, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [citySearch, tripId]);
+
+  function handleTripChange(field, value) {
+    setTripForm((current) => ({ ...current, [field]: value }));
   }
 
-  async function handleSubmit(event) {
+  function handleStopChange(field, value) {
+    setStopForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function selectCity(city) {
+    setStopForm((current) => ({
+      ...current,
+      city_id: city.id,
+      city_name: stopLabel(city),
+    }));
+    setCitySearch(stopLabel(city));
+    setCityResults([]);
+  }
+
+  async function handleTripSubmit(event) {
     event.preventDefault();
-    setLoading(true);
-    setError('');
-    setNotice('');
 
     const token = readToken();
-
     if (!token) {
       navigate('/login', { replace: true });
       return;
     }
 
-    if (!form.title.trim() || !form.description.trim() || !form.start_date || !form.end_date) {
+    if (!tripForm.title.trim() || !tripForm.description.trim() || !tripForm.start_date || !tripForm.end_date) {
       setError('Title, description, start date, and end date are required');
-      setLoading(false);
       return;
     }
 
-    if (new Date(form.start_date) > new Date(form.end_date)) {
+    if (new Date(tripForm.start_date) > new Date(tripForm.end_date)) {
       setError('Start date must be on or before end date');
-      setLoading(false);
       return;
     }
+
+    setSavingTrip(true);
+    setError('');
+    setNotice('');
+
+    const payload = {
+      title: tripForm.title.trim(),
+      description: tripForm.description.trim(),
+      trip_type: tripForm.trip_type,
+      start_date: tripForm.start_date,
+      end_date: tripForm.end_date,
+      cover_image: tripForm.cover_image.trim() || '/images/dashboard_background.png',
+      visibility: tripForm.visibility,
+    };
 
     try {
-      const payload = {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        trip_type: form.trip_type,
-        start_date: form.start_date,
-        end_date: form.end_date,
-        cover_image: form.cover_image.trim() || '/images/dashboard_background.png',
-        visibility: form.visibility,
-      };
-
-      const response = await createTrip(payload, token);
-      const trip = response.data;
+      const response = editMode ? await updateTrip(token, tripId, payload) : await createTrip(payload, token);
+      const nextTripId = editMode ? tripId : response.data.id;
       setNotice(editMode ? 'Trip updated' : 'Trip created successfully');
-      navigate(`/trips?created=${trip.id}`, { replace: true });
+      navigate(`/itinerary-builder?tripId=${nextTripId}`, { replace: true });
     } catch (err) {
-      setError(err.message || 'Failed to create trip');
+      if (isAuthError(err)) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('traveloop_refresh_token');
+        localStorage.removeItem('traveloop_user');
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      setError(err.message || 'Failed to save trip');
     } finally {
-      setLoading(false);
+      setSavingTrip(false);
+    }
+  }
+
+  async function handleStopSubmit(event) {
+    event.preventDefault();
+
+    if (!tripId) {
+      setStopError('Create or open a trip first');
+      return;
+    }
+
+    if (!stopForm.city_id || !stopForm.arrival_date || !stopForm.departure_date) {
+      setStopError('City, arrival date, and departure date are required');
+      return;
+    }
+
+    const token = readToken();
+    setSavingStop(true);
+    setStopError('');
+    setStopNotice('');
+
+    const payload = {
+      city_id: stopForm.city_id,
+      arrival_date: stopForm.arrival_date,
+      departure_date: stopForm.departure_date,
+      stop_order: stops.length + 1,
+      hotel_name: stopForm.hotel_name.trim() || null,
+      stay_type: stopForm.stay_type,
+      notes: stopForm.notes.trim() || null,
+      hotel_cost: 0,
+      transport_cost: 0,
+      food_cost: 0,
+    };
+
+    try {
+      await createStop(tripId, payload, token);
+      const refreshed = await getTripStops(tripId, token);
+      setStops(refreshed.data || []);
+      setStopForm(DEFAULT_STOP_FORM);
+      setCitySearch('');
+      setCityResults([]);
+      setStopNotice('Stop added to trip');
+    } catch (err) {
+      if (isAuthError(err)) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('traveloop_refresh_token');
+        localStorage.removeItem('traveloop_user');
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      setStopError(err.message || 'Failed to add stop');
+    } finally {
+      setSavingStop(false);
     }
   }
 
@@ -147,14 +362,14 @@ export default function ItineraryBuilderPage() {
     <ScreenFrame
       eyebrow="Screen 4"
       title="Itinerary Builder"
-      description="Create a new trip, define the core dates, and then add stops, activities, and checklist items."
+      description="Create a trip, then add stops, activities, and checklist items from the same workspace."
       actions={
         <>
-          <button className="primary-button screen-button" type="submit" form="trip-create-form" disabled={loading || loadingTrip}>
+          <button className="primary-button screen-button" type="submit" form="trip-create-form" disabled={savingTrip || loadingTrip}>
             <span>{editMode ? 'Save Changes' : 'Create Trip'}</span>
             <span aria-hidden="true">-&gt;</span>
           </button>
-          <button className="secondary-button screen-button" type="button" onClick={() => setForm(DEFAULT_FORM)} disabled={loading || loadingTrip}>
+          <button className="secondary-button screen-button" type="button" onClick={() => setTripForm(DEFAULT_TRIP_FORM)} disabled={savingTrip || loadingTrip}>
             Reset
           </button>
         </>
@@ -162,16 +377,20 @@ export default function ItineraryBuilderPage() {
       aside={
         <div className="screen-summary">
           <div className="screen-summary__row">
-            <strong>{form.start_date && form.end_date ? Math.max(1, Math.round((new Date(form.end_date) - new Date(form.start_date)) / 86400000) + 1) : 0} days</strong>
+            <strong>{tripLength} days</strong>
             <span>Trip length</span>
           </div>
           <div className="screen-summary__row">
-            <strong>{form.visibility}</strong>
+            <strong>{tripForm.visibility}</strong>
             <span>Visibility</span>
           </div>
           <div className="screen-summary__row">
-            <strong>{form.trip_type}</strong>
+            <strong>{tripForm.trip_type}</strong>
             <span>Trip type</span>
+          </div>
+          <div className="screen-summary__row">
+            <strong>{stops.length}</strong>
+            <span>Stops added</span>
           </div>
         </div>
       }
@@ -184,20 +403,20 @@ export default function ItineraryBuilderPage() {
           <div className="screen-card__header">
             <div>
               <h2>{editMode ? 'Edit Trip' : 'Create Trip'}</h2>
-              <p>Start with the main trip details. You can add stops next from the trip screen.</p>
+              <p>Create the main trip first, then add stops in the lower panel.</p>
             </div>
-            <span className="screen-pill">{loadingTrip ? 'Loading...' : 'Ready'}</span>
+            <span className="screen-pill">{loadingTrip ? 'Loading...' : tripId ? 'Active trip' : 'Ready'}</span>
           </div>
 
-          <form id="trip-create-form" className="form-grid" onSubmit={handleSubmit}>
+          <form id="trip-create-form" className="form-grid" onSubmit={handleTripSubmit}>
             <label className="field field--wide">
               <span className="field__label">Trip Title</span>
               <span className="field__control">
                 <input
                   type="text"
                   placeholder="Cherry Blossom 2026"
-                  value={form.title}
-                  onChange={(event) => handleChange('title', event.target.value)}
+                  value={tripForm.title}
+                  onChange={(event) => handleTripChange('title', event.target.value)}
                 />
               </span>
             </label>
@@ -207,8 +426,8 @@ export default function ItineraryBuilderPage() {
               <span className="field__control field__control--textarea">
                 <textarea
                   placeholder="What is this trip about?"
-                  value={form.description}
-                  onChange={(event) => handleChange('description', event.target.value)}
+                  value={tripForm.description}
+                  onChange={(event) => handleTripChange('description', event.target.value)}
                 />
               </span>
             </label>
@@ -216,7 +435,7 @@ export default function ItineraryBuilderPage() {
             <label className="field">
               <span className="field__label">Trip Type</span>
               <span className="field__control">
-                <select value={form.trip_type} onChange={(event) => handleChange('trip_type', event.target.value)}>
+                <select value={tripForm.trip_type} onChange={(event) => handleTripChange('trip_type', event.target.value)}>
                   <option value="solo">Solo</option>
                   <option value="couple">Couple</option>
                   <option value="family">Family</option>
@@ -229,7 +448,7 @@ export default function ItineraryBuilderPage() {
             <label className="field">
               <span className="field__label">Visibility</span>
               <span className="field__control">
-                <select value={form.visibility} onChange={(event) => handleChange('visibility', event.target.value)}>
+                <select value={tripForm.visibility} onChange={(event) => handleTripChange('visibility', event.target.value)}>
                   <option value="private">Private</option>
                   <option value="public">Public</option>
                 </select>
@@ -241,8 +460,8 @@ export default function ItineraryBuilderPage() {
               <span className="field__control">
                 <input
                   type="date"
-                  value={form.start_date}
-                  onChange={(event) => handleChange('start_date', event.target.value)}
+                  value={tripForm.start_date}
+                  onChange={(event) => handleTripChange('start_date', event.target.value)}
                 />
               </span>
             </label>
@@ -252,8 +471,8 @@ export default function ItineraryBuilderPage() {
               <span className="field__control">
                 <input
                   type="date"
-                  value={form.end_date}
-                  onChange={(event) => handleChange('end_date', event.target.value)}
+                  value={tripForm.end_date}
+                  onChange={(event) => handleTripChange('end_date', event.target.value)}
                 />
               </span>
             </label>
@@ -264,8 +483,8 @@ export default function ItineraryBuilderPage() {
                 <input
                   type="text"
                   placeholder="/images/dashboard_background.png"
-                  value={form.cover_image}
-                  onChange={(event) => handleChange('cover_image', event.target.value)}
+                  value={tripForm.cover_image}
+                  onChange={(event) => handleTripChange('cover_image', event.target.value)}
                 />
               </span>
             </label>
@@ -276,7 +495,7 @@ export default function ItineraryBuilderPage() {
           <div className="screen-card__header">
             <div>
               <h2>How it works</h2>
-              <p>After creating the trip, use the trip pages to add stops, activities, budget, notes, and checklist items.</p>
+              <p>Save the trip first. After that the stop form below becomes live and saves to the database.</p>
             </div>
           </div>
 
@@ -293,22 +512,22 @@ export default function ItineraryBuilderPage() {
       <section className="screen-card">
         <div className="screen-card__header">
           <div>
-            <h2>Preview</h2>
-            <p>A template itinerary to show how the builder evolves after you create the trip.</p>
+            <h2>Trip Stops</h2>
+            <p>{tripId ? 'Stops are stored in the trip_stops table and used by other screens.' : 'Create a trip to start adding stops.'}</p>
           </div>
-          <span className="screen-pill">Draft view</span>
+          <span className="screen-pill">{tripId ? `${stops.length} stops` : 'Draft view'}</span>
         </div>
 
         <div className="stop-list">
-          {previewStops.map((stop, index) => (
-            <article className="stop-item" key={stop.city}>
+          {(tripId && stops.length > 0 ? stops : previewStops).map((stop, index) => (
+            <article className="stop-item" key={stop.id || stop.city}>
               <div className="stop-item__index">{index + 1}</div>
               <div className="stop-item__copy">
-                <strong>{stop.city}</strong>
-                <span>{stop.dates}</span>
-                <p>{stop.notes}</p>
+                <strong>{stop.city_name || stop.city || 'Stop'}</strong>
+                <span>{stop.arrival_date && stop.departure_date ? formatStopRange(stop) : stop.dates}</span>
+                <p>{stop.notes || 'Planned stop for the itinerary'}</p>
               </div>
-              <button className="stop-item__drag" type="button" aria-label={`Move ${stop.city}`}>
+              <button className="stop-item__drag" type="button" aria-label={`Move ${stop.city_name || stop.city}`}>
                 <AppIcon kind="spark" />
               </button>
             </article>
@@ -320,46 +539,118 @@ export default function ItineraryBuilderPage() {
             <div className="screen-card__header">
               <div>
                 <h2>Add Stop</h2>
-                <p>These controls become active after the trip is created.</p>
+                <p>{tripId ? 'Pick a city and save the stop to the current trip.' : 'Create the trip first to enable stop creation.'}</p>
               </div>
             </div>
-            <div className="form-grid">
-              <label className="field">
+
+            {stopError ? <div className="form-error">{stopError}</div> : null}
+            {stopNotice ? <div className="checklist-banner checklist-banner--notice">{stopNotice}</div> : null}
+
+            <form className="form-grid" onSubmit={handleStopSubmit}>
+              <label className="field field--wide">
                 <span className="field__label">City</span>
                 <span className="field__control">
-                  <input type="text" placeholder="Search city" disabled />
+                  <input
+                    type="text"
+                    placeholder={tripId ? 'Search city' : 'Save trip first'}
+                    value={citySearch}
+                    onChange={(event) => setCitySearch(event.target.value)}
+                    disabled={!tripId}
+                  />
                 </span>
               </label>
+
+              {tripId && citySearch.trim().length >= 2 ? (
+                <div className="chip-list" style={{ marginTop: 0 }}>
+                  {citySearchLoading ? <span className="chip chip--static">Searching...</span> : null}
+                  {cityResults.map((city) => (
+                    <button className="chip chip--static" type="button" key={city.id} onClick={() => selectCity(city)}>
+                      {city.city_name}, {city.country}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
               <label className="field">
                 <span className="field__label">Arrival</span>
                 <span className="field__control">
-                  <input type="date" disabled />
+                  <input
+                    type="date"
+                    value={stopForm.arrival_date}
+                    onChange={(event) => handleStopChange('arrival_date', event.target.value)}
+                    disabled={!tripId}
+                  />
                 </span>
               </label>
+
               <label className="field">
                 <span className="field__label">Departure</span>
                 <span className="field__control">
-                  <input type="date" disabled />
+                  <input
+                    type="date"
+                    value={stopForm.departure_date}
+                    onChange={(event) => handleStopChange('departure_date', event.target.value)}
+                    disabled={!tripId}
+                  />
                 </span>
               </label>
+
               <label className="field">
                 <span className="field__label">Stay type</span>
                 <span className="field__control">
-                  <select defaultValue="hotel" disabled>
+                  <select
+                    value={stopForm.stay_type}
+                    onChange={(event) => handleStopChange('stay_type', event.target.value)}
+                    disabled={!tripId}
+                  >
                     <option value="hotel">Hotel</option>
                     <option value="hostel">Hostel</option>
                     <option value="apartment">Apartment</option>
                   </select>
                 </span>
               </label>
-            </div>
+
+              <label className="field field--wide">
+                <span className="field__label">Hotel name</span>
+                <span className="field__control">
+                  <input
+                    type="text"
+                    placeholder="Optional hotel or stay name"
+                    value={stopForm.hotel_name}
+                    onChange={(event) => handleStopChange('hotel_name', event.target.value)}
+                    disabled={!tripId}
+                  />
+                </span>
+              </label>
+
+              <label className="field field--wide">
+                <span className="field__label">Notes</span>
+                <span className="field__control field__control--textarea">
+                  <textarea
+                    placeholder="Arrival details, reminder, or transport note"
+                    value={stopForm.notes}
+                    onChange={(event) => handleStopChange('notes', event.target.value)}
+                    disabled={!tripId}
+                  />
+                </span>
+              </label>
+
+              <div className="checklist-form__actions">
+                <button className="primary-button screen-button" type="submit" disabled={!tripId || savingStop}>
+                  {savingStop ? 'Saving...' : 'Add Stop'}
+                </button>
+                <button className="secondary-button screen-button" type="button" onClick={() => setStopForm(DEFAULT_STOP_FORM)} disabled={!tripId || savingStop}>
+                  Clear
+                </button>
+              </div>
+            </form>
           </div>
 
           <div className="mini-panel mini-panel--accent">
             <div className="screen-card__header">
               <div>
                 <h2>Activity Assignment</h2>
-                <p>Attach planned activities to each stop after the trip is created.</p>
+                <p>Attach planned activities to each stop after it is saved.</p>
               </div>
             </div>
 
