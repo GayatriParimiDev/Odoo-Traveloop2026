@@ -26,11 +26,13 @@ export async function updateProfile(req, res, next) {
   try {
     const allowedFields = [
       'full_name',
+      'email',
       'avatar_url',
       'bio',
       'city',
       'country',
       'preferred_currency',
+      'language',
     ];
 
     const updates = [];
@@ -45,6 +47,19 @@ export async function updateProfile(req, res, next) {
 
     if (updates.length === 0) {
       return res.status(400).json({ success: false, error: 'No valid fields provided' });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'email')) {
+      const duplicate = await sql`
+        select id
+        from users
+        where email = ${req.body.email} and id <> ${req.user.id}
+        limit 1
+      `;
+
+      if (duplicate.length > 0) {
+        return res.status(409).json({ success: false, error: 'Email already in use' });
+      }
     }
 
     values.push(req.user.id);

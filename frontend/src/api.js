@@ -64,3 +64,19 @@ export function getCities(params = {}) {
   const queryString = searchParams.toString();
   return request(`/cities${queryString ? `?${queryString}` : ''}`);
 }
+
+export function getProfile(token) {
+  return request('/users/profile', { token });
+}
+
+export function updateProfile(token, data) {
+  return request('/users/profile', { method: 'PUT', token, body: data });
+}
+
+export function deleteAccount(token) {
+  return request('/users/account', { method: 'DELETE', token });
+}
+
+export function getSavedDestinations(token) {
+  return request('/saved', { token });
+}

@@ -16,7 +16,11 @@ export default function Sidebar({ items }) {
         {items.map((item) => (
           <Link
             key={item.label}
-            className={`sidebar-item ${location.pathname === item.path ? 'is-active' : ''}`}
+            className={`sidebar-item ${
+              location.pathname === item.path || (item.path === '/settings' && location.pathname.startsWith('/settings'))
+                ? 'is-active'
+                : ''
+            }`}
             to={item.path}
           >
             <span className="sidebar-item__icon" aria-hidden="true">
