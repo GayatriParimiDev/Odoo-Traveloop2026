@@ -45,6 +45,10 @@ export function getTrip(token, id) {
   return request(`/trips/${id}`, { token });
 }
 
+export function getTripStops(tripId, token) {
+  return request(`/trips/${tripId}/stops`, { token });
+}
+
 export function deleteTrip(token, id) {
   return request(`/trips/${id}`, { method: 'DELETE', token });
 }
@@ -74,6 +78,40 @@ export function getCities(params = {}) {
 
 export function getTripChecklist(tripId, token) {
   return request(`/trips/${tripId}/checklist`, { token });
+}
+
+export function getTripNotes(tripId, token, stopId = '') {
+  const searchParams = new URLSearchParams();
+
+  if (stopId) {
+    searchParams.set('stop_id', stopId);
+  }
+
+  const queryString = searchParams.toString();
+  return request(`/trips/${tripId}/notes${queryString ? `?${queryString}` : ''}`, { token });
+}
+
+export function createTripNote(tripId, data, token) {
+  return request(`/trips/${tripId}/notes`, {
+    method: 'POST',
+    body: data,
+    token,
+  });
+}
+
+export function updateTripNote(tripId, noteId, data, token) {
+  return request(`/trips/${tripId}/notes/${noteId}`, {
+    method: 'PUT',
+    body: data,
+    token,
+  });
+}
+
+export function deleteTripNote(tripId, noteId, token) {
+  return request(`/trips/${tripId}/notes/${noteId}`, {
+    method: 'DELETE',
+    token,
+  });
 }
 
 export function createChecklistItem(tripId, data, token) {
