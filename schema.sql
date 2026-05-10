@@ -1,6 +1,6 @@
--- =========================================================
 -- TRAVELOOP FINAL DATABASE SCHEMA
 -- ODOO HACKATHON EDITION
+
 -- PostgreSQL + Supabase Database
 -- Custom JWT Authentication
 -- =========================================================
@@ -462,6 +462,8 @@ for each row
 execute procedure public.update_trip_total_cost();
 
 -- =========================================================
+
+
 -- SAMPLE CITY DATA
 -- =========================================================
 
@@ -511,6 +513,7 @@ values
 
 -- =========================================================
 -- FINAL NOTES
+
 -- =========================================================
 -- Authentication:
 -- ✅ Custom JWT Authentication
@@ -538,3 +541,4 @@ values
 -- ✅ Prisma / Drizzle ORM
 -- ✅ Scalable SaaS Architecture
 -- =========================================================
+
