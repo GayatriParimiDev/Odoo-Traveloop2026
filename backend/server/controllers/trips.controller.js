@@ -9,7 +9,7 @@ async function getTripOwnership(tripId, userId) {
   return rows[0] || null;
 }
 
-async function getTripById(tripId) {
+export async function getTripById(tripId) {
   const rows = await sql`
     SELECT * FROM trips WHERE id = ${tripId} LIMIT 1
   `;
