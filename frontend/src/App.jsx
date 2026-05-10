@@ -33,8 +33,9 @@ export default function App() {
         <Route path="/activity-search" element={<ActivitySearchPage />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/packing-checklist" element={<PackingChecklistPage />} />
-        <Route path="/shared-itinerary" element={<SharedItineraryPage />} />
-        <Route path="/settings" element={<ProfileSettingsPage />} />
+      <Route path="/shared-itinerary" element={<SharedItineraryPage />} />
+      <Route path="/shared-itinerary/:slug" element={<SharedItineraryPage />} />
+      <Route path="/settings" element={<ProfileSettingsPage />} />
         <Route path="/trip-notes" element={<TripNotesPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />

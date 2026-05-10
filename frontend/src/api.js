@@ -49,8 +49,15 @@ export function deleteTrip(token, id) {
   return request(`/trips/${id}`, { method: 'DELETE', token });
 }
 
-export function createTrip(token, data) {
-  return request('/trips', { method: 'POST', token, body: data });
+export function createTrip(arg1, arg2) {
+  const token = typeof arg1 === 'string' ? arg1 : arg2;
+  const data = typeof arg1 === 'string' ? arg2 : arg1;
+
+  return request('/trips', {
+    method: 'POST',
+    token,
+    body: data,
+  });
 }
 
 export function getCities(params = {}) {
@@ -63,4 +70,80 @@ export function getCities(params = {}) {
 
   const queryString = searchParams.toString();
   return request(`/cities${queryString ? `?${queryString}` : ''}`);
+}
+
+export function getTripChecklist(tripId, token) {
+  return request(`/trips/${tripId}/checklist`, { token });
+}
+
+export function createChecklistItem(tripId, data, token) {
+  return request(`/trips/${tripId}/checklist`, {
+    method: 'POST',
+    body: data,
+    token,
+  });
+}
+
+export function bulkCreateChecklistItems(tripId, items, token) {
+  return request(`/trips/${tripId}/checklist/bulk`, {
+    method: 'POST',
+    body: { items },
+    token,
+  });
+}
+
+export function updateChecklistItem(tripId, itemId, data, token) {
+  return request(`/trips/${tripId}/checklist/${itemId}`, {
+    method: 'PUT',
+    body: data,
+    token,
+  });
+}
+
+export function toggleChecklistItem(tripId, itemId, token) {
+  return request(`/trips/${tripId}/checklist/${itemId}`, {
+    method: 'PATCH',
+    token,
+  });
+}
+
+export function deleteChecklistItem(tripId, itemId, token) {
+  return request(`/trips/${tripId}/checklist/${itemId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export function resetChecklist(tripId, token) {
+  return request(`/trips/${tripId}/checklist/reset`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export function getPublicItineraries(query = '') {
+  const search = query ? `?q=${encodeURIComponent(query)}` : '';
+  return request(`/shared/public${search}`);
+}
+
+export function getSharedItinerary(slug) {
+  return request(`/shared/${slug}`);
+}
+
+export function shareTrip(tripId, token) {
+  return request(`/shared/trips/${tripId}/share`, {
+    method: 'POST',
+    token,
+  });
+}
+
+export function copySharedTrip(slug, token) {
+  return request(`/shared/${slug}/copy`, {
+    method: 'POST',
+    token,
+  });
+}
+
+export function getMyTrips(token) {
+  return request('/trips', { token });
 }

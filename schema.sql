@@ -28,14 +28,41 @@ CREATE TABLE public.cities (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cities_pkey PRIMARY KEY (id)
 );
+
+CREATE TYPE public.packing_category AS ENUM (
+  'documents',
+  'electronics',
+  'clothing',
+  'toiletries',
+  'medical',
+  'accessories',
+  'technology',
+  'weather',
+  'essentials',
+  'other'
+);
+
+CREATE TYPE public.packing_priority AS ENUM (
+  'high',
+  'medium',
+  'low'
+);
+
 CREATE TABLE public.packing_items (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
-  trip_id uuid,
+  trip_id uuid NOT NULL,
   item_name text NOT NULL,
-  category USER-DEFINED DEFAULT 'other'::packing_category,
+  category public.packing_category DEFAULT 'other'::packing_category,
   quantity integer DEFAULT 1,
+  priority public.packing_priority DEFAULT 'medium'::packing_priority,
+  notes text,
+  pack_by date,
+  is_essential boolean DEFAULT false,
   is_packed boolean DEFAULT false,
+  packed_at timestamp with time zone,
+  source text DEFAULT 'manual'::text,
   created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT packing_items_pkey PRIMARY KEY (id),
   CONSTRAINT packing_items_trip_id_fkey FOREIGN KEY (trip_id) REFERENCES public.trips(id)
 );

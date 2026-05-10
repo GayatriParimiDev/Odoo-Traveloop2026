@@ -9,6 +9,12 @@ function readToken() {
   return localStorage.getItem(STORAGE_KEY) || '';
 }
 
+function clearAuth() {
+  localStorage.removeItem('traveloop_access_token');
+  localStorage.removeItem('traveloop_refresh_token');
+  localStorage.removeItem('traveloop_user');
+}
+
 function formatDateRange(startDate, endDate) {
   if (!startDate || !endDate) return 'Dates not set';
   const start = new Date(startDate);
@@ -48,17 +54,30 @@ export default function MyTripsPage() {
 
   useEffect(() => {
     let active = true;
+    const token = readToken();
+
+    if (!token) {
+      navigate('/login', { replace: true });
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
 
     async function loadTrips() {
       setLoading(true);
       setError('');
       try {
-        const token = readToken();
         const response = await getTrips(token);
         if (!active) return;
         setTrips(response.data || []);
       } catch (err) {
         if (!active) return;
+        if (String(err.message || '').toLowerCase().includes('unauthorized') || String(err.message || '').toLowerCase().includes('invalid token')) {
+          clearAuth();
+          navigate('/login', { replace: true });
+          return;
+        }
         setError(err.message || 'Failed to load trips');
       } finally {
         if (active) setLoading(false);
@@ -69,7 +88,7 @@ export default function MyTripsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [navigate]);
 
   async function handleDelete(tripId) {
     const confirmed = window.confirm('Delete this trip permanently?');
@@ -82,6 +101,11 @@ export default function MyTripsPage() {
       await deleteTrip(token, tripId);
       setTrips((current) => current.filter((trip) => trip.id !== tripId));
     } catch (err) {
+      if (String(err.message || '').toLowerCase().includes('unauthorized') || String(err.message || '').toLowerCase().includes('invalid token')) {
+        clearAuth();
+        navigate('/login', { replace: true });
+        return;
+      }
       setError(err.message || 'Failed to delete trip');
     } finally {
       setDeletingId('');
