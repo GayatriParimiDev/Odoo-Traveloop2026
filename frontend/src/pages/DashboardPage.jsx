@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
 import TopNav from '../components/TopNav';
 import MetricCard from '../components/MetricCard';
 import TripCard from '../components/TripCard';
@@ -11,14 +10,11 @@ import {
   destinationCards,
   quickActions,
   recentTrips,
-  sidebarItems,
 } from '../data/dashboard';
 
 export default function DashboardPage() {
   return (
     <main className="dashboard-shell">
-      <Sidebar items={sidebarItems} />
-
       <div className="dashboard-main">
         <TopNav />
 

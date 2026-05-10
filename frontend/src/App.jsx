@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import AppShell from './components/AppShell';
 import DashboardPage from './pages/DashboardPage';
 import ActivitySearchPage from './pages/ActivitySearchPage';
 import BudgetPage from './pages/BudgetPage';
@@ -20,16 +21,18 @@ export default function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/itinerary-builder" element={<ItineraryBuilderPage />} />
-      <Route path="/itinerary-view" element={<ItineraryViewPage />} />
-      <Route path="/city-search" element={<CitySearchPage />} />
-      <Route path="/activity-search" element={<ActivitySearchPage />} />
-      <Route path="/budget" element={<BudgetPage />} />
-      <Route path="/packing-checklist" element={<PackingChecklistPage />} />
-      <Route path="/shared-itinerary" element={<SharedItineraryPage />} />
-      <Route path="/settings" element={<ProfileSettingsPage />} />
-      <Route path="/trip-notes" element={<TripNotesPage />} />
+      <Route element={<AppShell />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/itinerary-builder" element={<ItineraryBuilderPage />} />
+        <Route path="/itinerary-view" element={<ItineraryViewPage />} />
+        <Route path="/city-search" element={<CitySearchPage />} />
+        <Route path="/activity-search" element={<ActivitySearchPage />} />
+        <Route path="/budget" element={<BudgetPage />} />
+        <Route path="/packing-checklist" element={<PackingChecklistPage />} />
+        <Route path="/shared-itinerary" element={<SharedItineraryPage />} />
+        <Route path="/settings" element={<ProfileSettingsPage />} />
+        <Route path="/trip-notes" element={<TripNotesPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
