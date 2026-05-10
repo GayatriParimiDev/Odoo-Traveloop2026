@@ -114,7 +114,9 @@ create table public.cities (
 
     image_url text,
 
-    created_at timestamptz default now()
+    created_at timestamptz default now(),
+
+    unique(city_name, country)
 );
 
 -- =========================================================
