@@ -18,17 +18,25 @@ export async function getTripById(tripId) {
 
 export async function createTrip(req, res, next) {
   try {
-    const { title, description, trip_type, start_date, end_date, cover_image, visibility } = req.body;
+    const {
+      title,
+      description = null,
+      trip_type = 'solo',
+      start_date,
+      end_date,
+      visibility = 'private',
+      cover_image = null,
+    } = req.body;
 
-    if (!title || !description || !trip_type || !start_date || !end_date || !cover_image || !visibility) {
-      return res.status(400).json({ success: false, error: 'All fields are required' });
+    if (!title || !start_date || !end_date) {
+      return res.status(400).json({ success: false, error: 'Trip name and travel dates are required' });
     }
 
     const rows = await sql`
       INSERT INTO trips (
         id, user_id, title, description, trip_type, start_date, end_date, cover_image, visibility, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), ${req.user.id}, ${title}, ${description}, ${trip_type}, ${start_date}, ${end_date}, ${cover_image}, ${visibility}, NOW(), NOW()
+        uuid_generate_v4(), ${req.user.id}, ${title}, ${description}, ${trip_type}, ${start_date}, ${end_date}, ${cover_image}, ${visibility}, NOW(), NOW()
       )
       RETURNING *
     `;

@@ -94,7 +94,7 @@ export default function MyTripsPage() {
       title="My Trips"
       description="All trips created by you, loaded from the database."
       actions={
-        <button className="primary-button screen-button" type="button" onClick={() => navigate('/itinerary-builder')}>
+        <button className="primary-button screen-button" type="button" onClick={() => navigate('/trips/new')}>
           Create New Trip
         </button>
       }
@@ -126,7 +126,7 @@ export default function MyTripsPage() {
           <div className="screen-empty-state">
             <h3>No trips yet</h3>
             <p>Create your first trip to start planning stops and activities.</p>
-            <button className="primary-button screen-button" type="button" onClick={() => navigate('/itinerary-builder')}>
+            <button className="primary-button screen-button" type="button" onClick={() => navigate('/trips/new')}>
               Create a New Trip
             </button>
           </div>

@@ -49,6 +49,10 @@ export function deleteTrip(token, id) {
   return request(`/trips/${id}`, { method: 'DELETE', token });
 }
 
+export function createTrip(token, data) {
+  return request('/trips', { method: 'POST', token, body: data });
+}
+
 export function getCities(params = {}) {
   const searchParams = new URLSearchParams();
 
