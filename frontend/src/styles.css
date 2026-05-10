@@ -2932,6 +2932,47 @@ img {
   background: rgba(157, 63, 42, 0.08);
 }
 
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+.profile-header__label {
+  display: block;
+  color: #7a6b60;
+  font-size: 0.84rem;
+}
+
+.profile-header strong {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.profile-avatar {
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(232, 138, 71, 0.14);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.profile-avatar--image {
+  object-fit: cover;
+  border: 1px solid rgba(223, 211, 199, 0.72);
+}
+
+.form-grid--stack {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 720px) {
   .trip-record__meta {
     grid-template-columns: 1fr;

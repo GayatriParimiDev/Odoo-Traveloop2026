@@ -9,7 +9,7 @@ export const sidebarItems = [
   { label: 'Budget', icon: 'shield', path: '/budget' },
   { label: 'Packing Checklist', icon: 'saved', path: '/packing-checklist' },
   { label: 'Shared Itinerary', icon: 'share', path: '/shared-itinerary' },
-  { label: 'Settings', icon: 'settings', path: '/settings' },
+  { label: 'Profile / Settings', icon: 'settings', path: '/settings' },
   { label: 'Trip Notes', icon: 'messages', path: '/trip-notes' },
 ];
 
