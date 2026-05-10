@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Field from '../components/Field';
@@ -36,6 +37,18 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+=======
+import { Link, useNavigate } from 'react-router-dom';
+import Field from '../components/Field';
+import LogoMark from '../components/LogoMark';
+
+export default function LoginPage() {
+  const navigate = useNavigate();
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    navigate('/dashboard');
+>>>>>>> 48dd08f68605d92a39284804b25ee5f88a71cc20
   }
 
   return (
@@ -51,9 +64,12 @@ export default function LoginPage() {
             label="Email address"
             type="email"
             placeholder="you@example.com"
+<<<<<<< HEAD
             value={form.email}
             onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
             autoComplete="email"
+=======
+>>>>>>> 48dd08f68605d92a39284804b25ee5f88a71cc20
             icon={
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M4 6.5h16v11H4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -80,9 +96,12 @@ export default function LoginPage() {
             label="Password"
             type="password"
             placeholder="********"
+<<<<<<< HEAD
             value={form.password}
             onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
             autoComplete="current-password"
+=======
+>>>>>>> 48dd08f68605d92a39284804b25ee5f88a71cc20
             icon={
               <svg viewBox="0 0 24 24" fill="none">
                 <path
@@ -106,10 +125,15 @@ export default function LoginPage() {
             }
           />
 
+<<<<<<< HEAD
           {error ? <div className="form-error">{error}</div> : null}
 
           <button className="primary-button" type="submit" disabled={loading}>
             <span>{loading ? 'Signing in...' : 'Sign in'}</span>
+=======
+          <button className="primary-button" type="submit">
+            <span>Sign in</span>
+>>>>>>> 48dd08f68605d92a39284804b25ee5f88a71cc20
             <span aria-hidden="true" className="button-arrow">
               -&gt;
             </span>
@@ -119,7 +143,11 @@ export default function LoginPage() {
             <span>Or continue with</span>
           </div>
 
+<<<<<<< HEAD
           <button className="secondary-button" type="button" disabled>
+=======
+          <button className="secondary-button" type="button">
+>>>>>>> 48dd08f68605d92a39284804b25ee5f88a71cc20
             <span className="google-mark" aria-hidden="true">
               G
             </span>
@@ -128,7 +156,11 @@ export default function LoginPage() {
         </form>
 
         <p className="footer-copy">
+<<<<<<< HEAD
           Don&apos;t have an account? <Link to="/signup">Sign up here</Link>
+=======
+          Don't have an account? <Link to="/signup">Sign up here</Link>
+>>>>>>> 48dd08f68605d92a39284804b25ee5f88a71cc20
         </p>
       </section>
     </main>
