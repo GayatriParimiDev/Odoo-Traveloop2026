@@ -2,36 +2,70 @@ import sql from '../db/index.js';
 
 export async function getActivities(req, res, next) {
   try {
-    const { city_id, category, max_cost, min_cost } = req.query;
+    const { city_id, category, max_cost, min_cost, search, page = 1, limit = 24 } = req.query;
+    const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNumber = Math.max(parseInt(limit, 10) || 24, 1);
+    const offset = (pageNumber - 1) * limitNumber;
 
-    if (!city_id) {
-      return res.status(400).json({ success: false, error: 'city_id is required' });
+    const filters = [];
+    const values = [];
+
+    if (city_id) {
+      values.push(city_id);
+      filters.push(`a.city_id = $${values.length}`);
     }
-
-    const filters = ['city_id = $1'];
-    const values = [city_id];
 
     if (category) {
       values.push(category);
-      filters.push(`category = $${values.length}`);
+      filters.push(`a.category = $${values.length}`);
     }
 
     if (max_cost !== undefined) {
       values.push(max_cost);
-      filters.push(`estimated_cost <= $${values.length}`);
+      filters.push(`a.estimated_cost <= $${values.length}`);
     }
 
     if (min_cost !== undefined) {
       values.push(min_cost);
-      filters.push(`estimated_cost >= $${values.length}`);
+      filters.push(`a.estimated_cost >= $${values.length}`);
     }
 
-    const rows = await sql.unsafe(
-      `SELECT * FROM activities WHERE ${filters.join(' AND ')} ORDER BY rating DESC`,
+    if (search) {
+      values.push(`%${search}%`);
+      filters.push(`(a.title ILIKE $${values.length} OR a.description ILIKE $${values.length})`);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const totalResult = await sql.unsafe(
+      `SELECT COUNT(*)::int AS total
+       FROM activities a
+       ${whereClause}`,
       values
     );
 
-    return res.status(200).json({ success: true, data: rows });
+    const listValues = [...values, limitNumber, offset];
+    const rows = await sql.unsafe(
+      `
+        SELECT a.*, c.city_name, c.country, c.average_daily_cost, c.popularity_score
+        FROM activities a
+        JOIN cities c ON c.id = a.city_id
+        ${whereClause}
+        ORDER BY COALESCE(a.rating, 0) DESC, a.title ASC
+        LIMIT $${values.length + 1}
+        OFFSET $${values.length + 2}
+      `,
+      listValues
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        activities: rows,
+        total: totalResult[0]?.total || 0,
+        page: pageNumber,
+        limit: limitNumber,
+      },
+    });
   } catch (error) {
     return next(error);
   }
@@ -41,9 +75,9 @@ export async function getActivityById(req, res, next) {
   try {
     const { id } = req.params;
     const rows = await sql`
-      SELECT a.*, c.city_name, c.country
+      SELECT a.*, c.city_name, c.country, c.average_daily_cost, c.popularity_score
       FROM activities a
-      JOIN sqlcities c ON a.city_id = c.id
+      JOIN cities c ON a.city_id = c.id
       WHERE a.id = ${id}
       LIMIT 1
     `;

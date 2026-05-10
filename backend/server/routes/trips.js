@@ -6,6 +6,7 @@ import {
   getTrip,
   updateTrip,
   deleteTrip,
+  getTripBudget,
   createStop,
   getStops,
   updateStop,
@@ -22,6 +23,7 @@ router.get('/:id', auth, getTrip);
 router.put('/:id', auth, updateTrip);
 router.delete('/:id', auth, deleteTrip);
 router.get('/:id/itinerary', auth, getItinerary);
+router.get('/:id/budget', auth, getTripBudget);
 router.post('/:tripId/stops', auth, createStop);
 router.get('/:tripId/stops', auth, getStops);
 router.put('/:tripId/stops/:stopId', auth, updateStop);

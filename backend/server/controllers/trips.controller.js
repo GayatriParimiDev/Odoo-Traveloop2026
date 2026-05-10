@@ -171,7 +171,7 @@ export async function getStops(req, res, next) {
     const rows = await sql`
       SELECT ts.*, c.city_name, c.country, c.image_url
       FROM trip_stops ts
-      JOIN sqlcities c ON c.id = ts.city_id
+      JOIN cities c ON c.id = ts.city_id
       WHERE ts.trip_id = ${req.params.tripId}
       ORDER BY ts.stop_order ASC
     `;
@@ -312,7 +312,7 @@ export async function getItinerary(req, res, next) {
     const stops = await sql`
       SELECT ts.*, c.city_name, c.country, c.image_url
       FROM trip_stops ts
-      JOIN sqlcities c ON c.id = ts.city_id
+      JOIN cities c ON c.id = ts.city_id
       WHERE ts.trip_id = ${req.params.id}
       ORDER BY ts.stop_order ASC
     `;
@@ -341,6 +341,68 @@ export async function getItinerary(req, res, next) {
       data: {
         trip,
         stops: stopsWithActivities,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getTripBudget(req, res, next) {
+  try {
+    const trip = await getTripById(req.params.id);
+    if (!trip) return res.status(404).json({ success: false, error: 'Trip not found' });
+    if (trip.user_id !== req.user.id) return res.status(403).json({ success: false, error: 'Forbidden' });
+
+    const [expenseSummary] = await sql`
+      SELECT
+        COALESCE(SUM(amount), 0)::numeric AS total_expenses,
+        COUNT(*)::int AS expense_count
+      FROM trip_expenses
+      WHERE trip_id = ${req.params.id}
+    `;
+
+    const categoryBreakdown = await sql`
+      SELECT
+        category,
+        COALESCE(SUM(amount), 0)::numeric AS total
+      FROM trip_expenses
+      WHERE trip_id = ${req.params.id}
+      GROUP BY category
+      ORDER BY total DESC
+    `;
+
+    const [stopSummary] = await sql`
+      SELECT
+        COALESCE(SUM(total_stop_cost), 0)::numeric AS stop_total,
+        COUNT(*)::int AS stop_count
+      FROM trip_stops
+      WHERE trip_id = ${req.params.id}
+    `;
+
+    const [activitySummary] = await sql`
+      SELECT
+        COALESCE(SUM(COALESCE(ta.custom_cost, a.estimated_cost, 0)), 0)::numeric AS activity_total,
+        COUNT(*)::int AS activity_count
+      FROM trip_activities ta
+      LEFT JOIN activities a ON a.id = ta.activity_id
+      JOIN trip_stops ts ON ts.id = ta.trip_stop_id
+      WHERE ts.trip_id = ${req.params.id}
+    `;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        trip_id: req.params.id,
+        total_expenses: expenseSummary?.total_expenses || 0,
+        expense_count: expenseSummary?.expense_count || 0,
+        stop_total: stopSummary?.stop_total || 0,
+        stop_count: stopSummary?.stop_count || 0,
+        activity_total: activitySummary?.activity_total || 0,
+        activity_count: activitySummary?.activity_count || 0,
+        category_breakdown: categoryBreakdown,
+        estimated_total_cost:
+          Number(stopSummary?.stop_total || 0) + Number(activitySummary?.activity_total || 0),
       },
     });
   } catch (error) {

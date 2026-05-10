@@ -25,16 +25,18 @@ export async function getCities(req, res, next) {
     const orderBy =
       sort_by === 'cost'
         ? 'average_daily_cost ASC'
+        : sort_by === 'name'
+          ? 'city_name ASC'
         : 'popularity_score DESC';
 
     const totalResult = await sql.unsafe(
-      `SELECT COUNT(*)::int AS total FROM sqlcities ${whereClause}`,
+      `SELECT COUNT(*)::int AS total FROM cities ${whereClause}`,
       values
     );
 
     const cityValues = [...values, limitNumber, offset];
     const cities = await sql.unsafe(
-      `SELECT * FROM sqlcities ${whereClause} ORDER BY ${orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+      `SELECT * FROM cities ${whereClause} ORDER BY ${orderBy} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       cityValues
     );
 
@@ -55,7 +57,7 @@ export async function getCities(req, res, next) {
 export async function getCityById(req, res, next) {
   try {
     const { id } = req.params;
-    const rows = await sql`SELECT * FROM sqlcities WHERE id = ${id} LIMIT 1`;
+    const rows = await sql`SELECT * FROM cities WHERE id = ${id} LIMIT 1`;
 
     if (rows.length === 0) {
       return res.status(404).json({ success: false, error: 'City not found' });

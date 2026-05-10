@@ -97,3 +97,21 @@ export async function deleteNote(req, res, next) {
     return next(error);
   }
 }
+
+export async function getLatestNotes(req, res, next) {
+  try {
+    const rows = await sql`
+      SELECT tn.*, t.title AS trip_title, ts.stop_order, c.city_name, c.country
+      FROM trip_notes tn
+      JOIN trips t ON t.id = tn.trip_id
+      LEFT JOIN trip_stops ts ON ts.id = tn.trip_stop_id
+      LEFT JOIN cities c ON c.id = ts.city_id
+      WHERE tn.user_id = ${req.user.id}
+      ORDER BY tn.updated_at DESC, tn.created_at DESC
+      LIMIT 10
+    `;
+    return res.status(200).json({ success: true, data: rows });
+  } catch (error) {
+    return next(error);
+  }
+}

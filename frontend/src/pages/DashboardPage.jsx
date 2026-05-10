@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopNav from '../components/TopNav';
 import MetricCard from '../components/MetricCard';
@@ -39,18 +40,18 @@ export default function DashboardPage() {
               budget, cities, and activities in one place.
             </p>
             <div className="hero-actions">
-              <button className="primary-button hero-button" type="button">
+              <Link className="primary-button hero-button" to="/itinerary-builder">
                 <span>Plan New Trip</span>
                 <span aria-hidden="true" className="button-arrow">
                   -&gt;
                 </span>
-              </button>
-              <button className="secondary-button hero-button hero-button--secondary" type="button">
+              </Link>
+              <Link className="secondary-button hero-button hero-button--secondary" to="/itinerary-view">
                 <span aria-hidden="true" className="hero-button__icon">
                   <AppIcon kind="clock" />
                 </span>
                 <span>View Itinerary</span>
-              </button>
+              </Link>
             </div>
 
             <div className="hero-insights" aria-label="Travel highlights">
@@ -171,7 +172,7 @@ export default function DashboardPage() {
 
               <div className="quick-actions-list">
                 {quickActions.map((action) => (
-                  <button className="quick-action" type="button" key={action.title}>
+                  <Link className="quick-action" to={action.path} key={action.title}>
                     <span className="quick-action__icon">
                       <AppIcon kind={action.icon} />
                     </span>
@@ -179,7 +180,7 @@ export default function DashboardPage() {
                       <strong>{action.title}</strong>
                       <span>{action.subtitle}</span>
                     </span>
-                  </button>
+                  </Link>
                 ))}
               </div>
             </section>

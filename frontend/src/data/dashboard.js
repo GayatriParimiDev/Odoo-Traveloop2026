@@ -57,8 +57,8 @@ export const budgetBreakdown = [
 ];
 
 export const quickActions = [
-  { title: 'Plan New Trip', subtitle: 'Start a new itinerary', icon: 'plane' },
-  { title: 'Add Stop', subtitle: 'Insert a city into an itinerary', icon: 'pin' },
-  { title: 'Search Cities', subtitle: 'Compare costs and popularity', icon: 'search' },
-  { title: 'Share Trip', subtitle: 'Copy a public itinerary link', icon: 'share' },
+  { title: 'Plan New Trip', subtitle: 'Start a new itinerary', icon: 'plane', path: '/itinerary-builder' },
+  { title: 'Add Stop', subtitle: 'Insert a city into an itinerary', icon: 'pin', path: '/itinerary-builder' },
+  { title: 'Search Cities', subtitle: 'Compare costs and popularity', icon: 'search', path: '/city-search' },
+  { title: 'Share Trip', subtitle: 'Copy a public itinerary link', icon: 'share', path: '/shared-itinerary' },
 ];
