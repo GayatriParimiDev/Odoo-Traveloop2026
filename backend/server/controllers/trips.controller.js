@@ -270,12 +270,25 @@ export async function createStopActivity(req, res, next) {
     const ownership = await verifyStopActivityOwnership(req.params.stopId, req.user.id);
     if (!ownership) return res.status(403).json({ success: false, error: 'Forbidden' });
 
-    const { activity_id, activity_date, start_time, end_time, custom_notes, custom_cost, activity_order } = req.body;
+    const {
+      activity_id,
+      activity_date = null,
+      start_time = null,
+      end_time = null,
+      custom_notes = null,
+      custom_cost = 0,
+      activity_order = 1,
+    } = req.body;
+
+    if (!activity_id) {
+      return res.status(400).json({ success: false, error: 'activity_id is required' });
+    }
+
     const rows = await sql`
       INSERT INTO trip_activities (
         id, trip_stop_id, activity_id, activity_date, start_time, end_time, custom_notes, custom_cost, activity_order, created_at
       ) VALUES (
-        gen_random_uuid(), ${req.params.stopId}, ${activity_id}, ${activity_date}, ${start_time}, ${end_time}, ${custom_notes}, ${custom_cost}, ${activity_order}, NOW()
+        uuid_generate_v4(), ${req.params.stopId}, ${activity_id}, ${activity_date}, ${start_time}, ${end_time}, ${custom_notes}, ${custom_cost}, ${activity_order}, NOW()
       )
       RETURNING *
     `;
@@ -292,7 +305,15 @@ export async function getStopActivities(req, res, next) {
     if (!ownership) return res.status(403).json({ success: false, error: 'Forbidden' });
 
     const rows = await sql`
-      SELECT ta.*, a.title, a.category, a.image_url, a.estimated_cost
+      SELECT
+        ta.*,
+        a.title,
+        a.description,
+        a.category,
+        a.image_url,
+        a.estimated_cost,
+        a.estimated_duration_hours,
+        a.rating
       FROM trip_activities ta
       JOIN activities a ON a.id = ta.activity_id
       WHERE ta.trip_stop_id = ${req.params.stopId}

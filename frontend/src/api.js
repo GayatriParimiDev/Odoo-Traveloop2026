@@ -1,5 +1,5 @@
-const API_BASE =
-  (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
+const configuredApiBase = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
+const API_BASE = configuredApiBase.endsWith('/api') ? configuredApiBase : `${configuredApiBase}/api`;
 
 async function request(path, { method = 'GET', body, token } = {}) {
   const headers = {
@@ -200,4 +200,42 @@ export function deleteAccount(token) {
 
 export function getSavedDestinations(token) {
   return request('/saved', { token });
+}
+
+export function getActivities(params = {}) {
+  const searchParams = new URLSearchParams();
+
+
+  if (params.city_id) searchParams.set('city_id', params.city_id);
+  if (params.category) searchParams.set('category', params.category);
+  if (params.max_cost) searchParams.set('max_cost', String(params.max_cost));
+  if (params.min_cost) searchParams.set('min_cost', String(params.min_cost));
+  if (params.max_duration) searchParams.set('max_duration', String(params.max_duration));
+  if (params.min_duration) searchParams.set('min_duration', String(params.min_duration));
+  if (params.search) searchParams.set('search', params.search);
+  if (params.page) searchParams.set('page', String(params.page));
+  if (params.limit) searchParams.set('limit', String(params.limit));
+
+  const queryString = searchParams.toString();
+  return request(`/activities${queryString ? `?${queryString}` : ''}`);
+}
+
+
+export function getStopActivities(stopId, token) {
+  return request(`/stops/${stopId}/activities`, { token });
+}
+
+export function addStopActivity(stopId, data, token) {
+  return request(`/stops/${stopId}/activities`, {
+    method: 'POST',
+    body: data,
+    token,
+  });
+}
+
+export function removeStopActivity(stopId, tripActivityId, token) {
+  return request(`/stops/${stopId}/activities/${tripActivityId}`, {
+    method: 'DELETE',
+    token,
+  });
 }

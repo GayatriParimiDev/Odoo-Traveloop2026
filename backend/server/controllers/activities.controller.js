@@ -2,7 +2,7 @@ import sql from '../db/index.js';
 
 export async function getActivities(req, res, next) {
   try {
-    const { city_id, category, max_cost, min_cost, search, page = 1, limit = 24 } = req.query;
+    const { city_id, category, max_cost, min_cost, max_duration, min_duration, search, page = 1, limit = 24 } = req.query;
     const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
     const limitNumber = Math.max(parseInt(limit, 10) || 24, 1);
     const offset = (pageNumber - 1) * limitNumber;
@@ -28,6 +28,16 @@ export async function getActivities(req, res, next) {
     if (min_cost !== undefined) {
       values.push(min_cost);
       filters.push(`a.estimated_cost >= $${values.length}`);
+    }
+
+    if (max_duration !== undefined) {
+      values.push(max_duration);
+      filters.push(`a.estimated_duration_hours <= $${values.length}`);
+    }
+
+    if (min_duration !== undefined) {
+      values.push(min_duration);
+      filters.push(`a.estimated_duration_hours >= $${values.length}`);
     }
 
     if (search) {
