@@ -2559,6 +2559,129 @@ img {
   min-height: 100%;
 }
 
+.screen-empty,
+.screen-empty-state {
+  padding: 1rem;
+  border-radius: 1.15rem;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(223, 211, 199, 0.68);
+  color: #6f6258;
+}
+
+.screen-empty--error {
+  color: #9d3f2a;
+}
+
+.screen-empty-state {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.screen-empty-state h3 {
+  margin: 0;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.trip-grid {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.trip-record {
+  padding: 1rem 1rem 0.95rem;
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(223, 211, 199, 0.72);
+}
+
+.trip-record__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.trip-record__head h3 {
+  margin: 0;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.trip-record__head p {
+  margin: 0.35rem 0 0;
+  color: #6f6258;
+  font-size: 0.92rem;
+}
+
+.trip-record__status {
+  min-height: 1.85rem;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: #8c5124;
+  background: rgba(232, 138, 71, 0.16);
+}
+
+.trip-record__status--public {
+  color: #385c73;
+  background: rgba(116, 169, 203, 0.2);
+}
+
+.trip-record__status--completed {
+  color: #5a6b3b;
+  background: rgba(151, 179, 108, 0.2);
+}
+
+.trip-record__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.trip-record__meta span {
+  display: block;
+  color: #7a6b60;
+  font-size: 0.84rem;
+}
+
+.trip-record__meta strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1rem;
+}
+
+.trip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.trip-actions__button {
+  min-height: 2.8rem;
+  padding: 0 1rem;
+}
+
+.trip-actions__button--danger {
+  color: #9d3f2a;
+  background: rgba(157, 63, 42, 0.08);
+}
+
+@media (max-width: 720px) {
+  .trip-record__meta {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 980px) {
   .screen-hero,
   .screen-card--split,

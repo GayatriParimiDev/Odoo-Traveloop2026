@@ -27,24 +27,6 @@ export default function Sidebar({ items }) {
         ))}
       </nav>
 
-      <div className="sidebar-promo sidebar-promo--top">
-        <div className="sidebar-promo__icon">
-          <AppIcon kind="spark" />
-        </div>
-        <div>
-          <strong>Plan with Concierge</strong>
-          <p>Personalized travel assistance</p>
-        </div>
-        <span className="sidebar-promo__arrow">-&gt;</span>
-      </div>
-
-      <div className="sidebar-promo sidebar-promo--bottom">
-        <p>Unlock exclusive travel perks</p>
-        <strong>Join Elite -&gt;</strong>
-        <div className="sidebar-promo__luggage" aria-hidden="true">
-          <div />
-        </div>
-      </div>
     </aside>
   );
 }

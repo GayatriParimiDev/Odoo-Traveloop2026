@@ -1,5 +1,6 @@
 export const sidebarItems = [
   { label: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
+  { label: 'My Trips', icon: 'trips', path: '/trips' },
   { label: 'Itinerary Builder', icon: 'trips', path: '/itinerary-builder' },
   { label: 'Itinerary View', icon: 'clock', path: '/itinerary-view' },
   { label: 'City Search', icon: 'search', path: '/city-search' },

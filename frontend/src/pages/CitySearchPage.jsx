@@ -1,13 +1,60 @@
+import { useEffect, useMemo, useState } from 'react';
 import ScreenFrame from '../components/ScreenFrame';
+import { getCities } from '../api';
 
-const cityResults = [
-  { city: 'Kyoto', country: 'Japan', cost: 'INR 9K / day', region: 'Asia', pop: '92' },
-  { city: 'Paris', country: 'France', cost: 'INR 15K / day', region: 'Europe', pop: '98' },
-  { city: 'Bali', country: 'Indonesia', cost: 'INR 7K / day', region: 'Asia', pop: '96' },
-  { city: 'Rome', country: 'Italy', cost: 'INR 11K / day', region: 'Europe', pop: '94' },
-];
+const regionMap = {
+  India: 'Asia',
+  Japan: 'Asia',
+  Indonesia: 'Asia',
+  France: 'Europe',
+  Italy: 'Europe',
+};
+
+function formatCost(amount, currency = 'INR') {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(amount || 0));
+}
+
+function getRegion(country) {
+  return regionMap[country] || 'Other';
+}
 
 export default function CitySearchPage() {
+  const [search, setSearch] = useState('');
+  const [region, setRegion] = useState('All regions');
+  const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCities() {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await getCities({ search: search.trim() || undefined, sort_by: 'popularity', limit: 50 });
+        if (!active) return;
+        setCities(response.data?.cities || []);
+      } catch (err) {
+        if (!active) return;
+        setError(err.message || 'Failed to load cities');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadCities();
+    return () => {
+      active = false;
+    };
+  }, [search]);
+
+  const filteredCities = useMemo(() => {
+    if (region === 'All regions') return cities;
+    return cities.filter((city) => getRegion(city.country) === region);
+  }, [cities, region]);
+
   return (
     <ScreenFrame
       eyebrow="Screen 6"
@@ -22,12 +69,12 @@ export default function CitySearchPage() {
       aside={
         <div className="screen-summary">
           <div className="screen-summary__row">
-            <strong>24</strong>
+            <strong>{cities.length}</strong>
             <span>Cities available</span>
           </div>
           <div className="screen-summary__row">
-            <strong>4 filters</strong>
-            <span>Country / region</span>
+            <strong>{new Set(cities.map((city) => getRegion(city.country))).size}</strong>
+            <span>Regions found</span>
           </div>
         </div>
       }
@@ -37,45 +84,60 @@ export default function CitySearchPage() {
           <label className="field field--wide">
             <span className="field__label">Search city</span>
             <span className="field__control">
-              <input type="text" placeholder="Tokyo, Lisbon, New York..." />
+              <input
+                type="text"
+                placeholder="Tokyo, Lisbon, New York..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </span>
           </label>
 
           <div className="chip-list">
-            <button className="chip chip--active" type="button">
-              All regions
-            </button>
-            <button className="chip" type="button">
-              Asia
-            </button>
-            <button className="chip" type="button">
-              Europe
-            </button>
-            <button className="chip" type="button">
-              Americas
-            </button>
+            {['All regions', 'Asia', 'Europe', 'Americas', 'Other'].map((item) => (
+              <button
+                className={`chip ${region === item ? 'chip--active' : ''}`}
+                type="button"
+                key={item}
+                onClick={() => setRegion(item)}
+              >
+                {item}
+              </button>
+            ))}
           </div>
         </div>
 
+        {loading ? <p className="screen-empty">Loading cities from the database...</p> : null}
+        {error ? <p className="screen-empty screen-empty--error">{error}</p> : null}
+
+        {!loading && !error && filteredCities.length === 0 ? (
+          <div className="screen-empty-state">
+            <h3>No matching cities</h3>
+            <p>Try another search term or region filter.</p>
+          </div>
+        ) : null}
+
         <div className="result-list">
-          {cityResults.map((city) => (
-            <article className="result-card" key={city.city}>
-              <div>
-                <h3>
-                  {city.city}
-                  <span>{city.country}</span>
-                </h3>
-                <p>{city.cost}</p>
-              </div>
-              <div className="result-card__meta">
-                <span>{city.region}</span>
-                <strong>{city.pop}</strong>
-              </div>
-              <button className="secondary-button result-card__button" type="button">
-                Add to Trip
-              </button>
-            </article>
-          ))}
+          {!loading && !error
+            ? filteredCities.map((city) => (
+                <article className="result-card" key={city.id}>
+                  <div>
+                    <h3>
+                      {city.city_name}
+                      <span>{city.country}</span>
+                    </h3>
+                    <p>{formatCost(city.average_daily_cost)} / day</p>
+                  </div>
+                  <div className="result-card__meta">
+                    <span>{getRegion(city.country)}</span>
+                    <strong>{city.popularity_score}</strong>
+                  </div>
+                  <button className="secondary-button result-card__button" type="button">
+                    Add to Trip
+                  </button>
+                </article>
+              ))
+            : null}
         </div>
       </section>
     </ScreenFrame>

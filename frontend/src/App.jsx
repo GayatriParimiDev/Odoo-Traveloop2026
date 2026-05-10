@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import DashboardPage from './pages/DashboardPage';
+import MyTripsPage from './pages/MyTripsPage';
 import ActivitySearchPage from './pages/ActivitySearchPage';
 import BudgetPage from './pages/BudgetPage';
 import CitySearchPage from './pages/CitySearchPage';
@@ -23,6 +24,7 @@ export default function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route element={<AppShell />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/trips" element={<MyTripsPage />} />
         <Route path="/itinerary-builder" element={<ItineraryBuilderPage />} />
         <Route path="/itinerary-view" element={<ItineraryViewPage />} />
         <Route path="/city-search" element={<CitySearchPage />} />

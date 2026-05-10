@@ -42,8 +42,14 @@ export async function createTrip(req, res, next) {
 export async function getTrips(req, res, next) {
   try {
     const rows = await sql`
-      SELECT *
-      FROM trips
+      SELECT
+        t.*,
+        COALESCE((
+          SELECT COUNT(*)::int
+          FROM trip_stops ts
+          WHERE ts.trip_id = t.id
+        ), 0) AS stop_count
+      FROM trips t
       WHERE user_id = ${req.user.id}
       ORDER BY created_at DESC
     `;
