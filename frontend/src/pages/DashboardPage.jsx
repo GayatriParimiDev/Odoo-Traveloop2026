@@ -77,7 +77,7 @@ export default function DashboardPage() {
               <div className="summary-card__body">
                 <span>Next trip</span>
                 <strong>Cherry Blossom 2026</strong>
-                <p>Tokyo -> Kyoto | 12 Apr - 22 Apr</p>
+                <p>Tokyo -&gt; Kyoto | 12 Apr - 22 Apr</p>
               </div>
             </article>
 
