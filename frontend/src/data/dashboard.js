@@ -1,11 +1,14 @@
 export const sidebarItems = [
-  { label: 'Dashboard', icon: 'dashboard', active: true },
-  { label: 'My Trips', icon: 'trips' },
-  { label: 'Saved Places', icon: 'saved' },
-  { label: 'Experiences', icon: 'experiences' },
-  { label: 'Messages', icon: 'messages' },
-  { label: 'Bookings', icon: 'bookings' },
-  { label: 'Settings', icon: 'settings' },
+  { label: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
+  { label: 'Itinerary Builder', icon: 'trips', path: '/itinerary-builder' },
+  { label: 'Itinerary View', icon: 'clock', path: '/itinerary-view' },
+  { label: 'City Search', icon: 'search', path: '/city-search' },
+  { label: 'Activity Search', icon: 'experiences', path: '/activity-search' },
+  { label: 'Budget', icon: 'shield', path: '/budget' },
+  { label: 'Packing Checklist', icon: 'saved', path: '/packing-checklist' },
+  { label: 'Shared Itinerary', icon: 'share', path: '/shared-itinerary' },
+  { label: 'Settings', icon: 'settings', path: '/settings' },
+  { label: 'Trip Notes', icon: 'messages', path: '/trip-notes' },
 ];
 
 export const dashboardMetrics = [
@@ -58,7 +61,12 @@ export const budgetBreakdown = [
 
 export const quickActions = [
   { title: 'Plan New Trip', subtitle: 'Start a new itinerary', icon: 'plane', path: '/itinerary-builder' },
-  { title: 'Add Stop', subtitle: 'Insert a city into an itinerary', icon: 'pin', path: '/itinerary-builder' },
+  { title: 'View Itinerary', subtitle: 'Review the full route', icon: 'clock', path: '/itinerary-view' },
   { title: 'Search Cities', subtitle: 'Compare costs and popularity', icon: 'search', path: '/city-search' },
+  { title: 'Search Activities', subtitle: 'Find things to do by stop', icon: 'spark', path: '/activity-search' },
+  { title: 'Trip Budget', subtitle: 'Track spend and targets', icon: 'shield', path: '/budget' },
+  { title: 'Packing Checklist', subtitle: 'Prepare for departure', icon: 'saved', path: '/packing-checklist' },
   { title: 'Share Trip', subtitle: 'Copy a public itinerary link', icon: 'share', path: '/shared-itinerary' },
+  { title: 'Profile Settings', subtitle: 'Update traveler details', icon: 'settings', path: '/settings' },
+  { title: 'Trip Notes', subtitle: 'Capture planning notes', icon: 'messages', path: '/trip-notes' },
 ];

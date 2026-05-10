@@ -1,7 +1,10 @@
+import { Link, useLocation } from 'react-router-dom';
 import AppIcon from './AppIcon';
 import LogoMark from './LogoMark';
 
 export default function Sidebar({ items }) {
+  const location = useLocation();
+
   return (
     <aside className="dashboard-sidebar">
       <div className="dashboard-sidebar__brand">
@@ -11,16 +14,16 @@ export default function Sidebar({ items }) {
 
       <nav className="dashboard-sidebar__nav" aria-label="Sidebar">
         {items.map((item) => (
-          <button
+          <Link
             key={item.label}
-            className={`sidebar-item ${item.active ? 'is-active' : ''}`}
-            type="button"
+            className={`sidebar-item ${location.pathname === item.path ? 'is-active' : ''}`}
+            to={item.path}
           >
             <span className="sidebar-item__icon" aria-hidden="true">
               <AppIcon kind={item.icon} />
             </span>
             <span>{item.label}</span>
-          </button>
+          </Link>
         ))}
       </nav>
 

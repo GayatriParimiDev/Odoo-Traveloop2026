@@ -340,6 +340,16 @@ img {
   color: var(--primary-deep);
 }
 
+.form-error {
+  padding: 0.85rem 1rem;
+  border-radius: 0.95rem;
+  background: rgba(201, 106, 42, 0.1);
+  border: 1px solid rgba(201, 106, 42, 0.22);
+  color: #9f4f1c;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
 .auth--signup {
   display: grid;
   grid-template-columns: 1.2fr minmax(22rem, 0.78fr);

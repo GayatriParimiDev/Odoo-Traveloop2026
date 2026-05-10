@@ -33,9 +33,24 @@ function safeUser(user) {
 
 export async function register(req, res, next) {
   try {
-    const { username, full_name, email, password } = req.body;
+    const {
+      username,
+      full_name,
+      first_name,
+      last_name,
+      email,
+      password,
+      city,
+      country,
+      bio,
+      avatar_url,
+      preferred_currency,
+    } = req.body;
 
-    if (!username || !full_name || !email || !password) {
+    const derivedFullName = [first_name, last_name].filter(Boolean).join(' ').trim();
+    const resolvedFullName = (full_name || derivedFullName || username || email || '').trim();
+
+    if (!username || !email || !password) {
       return res.status(400).json({ success: false, error: 'All fields are required' });
     }
 
@@ -54,19 +69,27 @@ export async function register(req, res, next) {
 
     const rows = await sql`
       insert into users (
-        id,
         username,
         full_name,
         email,
         password_hash,
+        avatar_url,
+        bio,
+        city,
+        country,
+        preferred_currency,
         created_at,
         updated_at
       ) values (
-        uuid_generate_v4(),
         ${username},
-        ${full_name},
+        ${resolvedFullName || null},
         ${email},
         ${password_hash},
+        ${avatar_url || null},
+        ${bio || null},
+        ${city || null},
+        ${country || null},
+        ${preferred_currency || 'INR'},
         now(),
         now()
       )
