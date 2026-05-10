@@ -2071,57 +2071,6 @@ img {
     linear-gradient(180deg, #fbf6ef 0%, #f4ede4 100%);
 }
 
-.screen-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.95rem 1.1rem;
-  border-radius: 1.6rem;
-  border: 1px solid rgba(223, 211, 199, 0.82);
-  background: rgba(255, 249, 242, 0.78);
-  backdrop-filter: blur(12px);
-}
-
-.screen-nav__brand {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.screen-nav__brand .logo-mark {
-  width: 2.6rem;
-  height: 2.6rem;
-  background: transparent;
-  color: var(--primary);
-}
-
-.screen-nav__brand .logo-mark svg {
-  width: 1.4rem;
-  height: 1.4rem;
-}
-
-.screen-nav__label {
-  display: block;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #8a7c71;
-}
-
-.screen-nav__brand strong {
-  display: block;
-  color: var(--primary);
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.9rem;
-  line-height: 1;
-}
-
-.screen-nav__back {
-  color: var(--primary);
-  font-weight: 700;
-}
-
 .screen-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.7fr);
@@ -3396,14 +3345,6 @@ img {
 @media (max-width: 720px) {
   .screen-shell {
     padding: 0.75rem;
-  }
-
-  .screen-nav {
-    flex-wrap: wrap;
-  }
-
-  .screen-nav__back {
-    width: 100%;
   }
 
   .screen-actions,

@@ -11,6 +11,8 @@ import {
 
 const STORAGE_KEYS = {
   accessToken: 'traveloop_access_token',
+  selectedTripId: 'traveloop_shared_selected_trip',
+  publicUrls: 'traveloop_shared_public_urls',
 };
 
 const CATEGORY_LABELS = {
@@ -28,6 +30,48 @@ const CATEGORY_LABELS = {
 
 function getToken() {
   return localStorage.getItem(STORAGE_KEYS.accessToken) || '';
+}
+
+function clearAuth() {
+  localStorage.removeItem(STORAGE_KEYS.accessToken);
+  localStorage.removeItem('traveloop_refresh_token');
+  localStorage.removeItem('traveloop_user');
+}
+
+function getStoredTripId() {
+  return localStorage.getItem(STORAGE_KEYS.selectedTripId) || '';
+}
+
+function persistTripId(tripId) {
+  if (tripId) {
+    localStorage.setItem(STORAGE_KEYS.selectedTripId, tripId);
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.selectedTripId);
+  }
+}
+
+function readPublicUrls() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.publicUrls);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistPublicUrl(tripId, publicUrl) {
+  if (!tripId || !publicUrl) {
+    return;
+  }
+
+  const current = readPublicUrls();
+  current[tripId] = publicUrl;
+  localStorage.setItem(STORAGE_KEYS.publicUrls, JSON.stringify(current));
+}
+
+function isAuthError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('unauthorized') || message.includes('invalid token');
 }
 
 function formatDateRange(startDate, endDate) {
@@ -113,6 +157,19 @@ export default function SharedItineraryPage() {
     return visibleTrips[0] || null;
   }, [selectedTrip, visibleTrips]);
 
+  const selectedOwnedTrip = useMemo(
+    () => ownedTrips.find((trip) => trip.id === selectedTripId) || null,
+    [ownedTrips, selectedTripId]
+  );
+
+  const selectedOwnedPublicTrip = useMemo(
+    () => publicTrips.find((trip) => trip.id === selectedTripId) || null,
+    [publicTrips, selectedTripId]
+  );
+
+  const selectedOwnedTripIsPublic = selectedOwnedTrip?.visibility === 'public';
+  const selectedOwnedTripPublicUrl = selectedOwnedPublicTrip?.public_url || readPublicUrls()[selectedTripId] || '';
+
   useEffect(() => {
     let active = true;
 
@@ -160,13 +217,31 @@ export default function SharedItineraryPage() {
         if (!active) {
           return;
         }
-        setOwnedTrips(res.data || []);
-        if (!selectedTripId && res.data?.length) {
-          setSelectedTripId(res.data[0].id);
+        const trips = res.data || [];
+        setOwnedTrips(trips);
+
+        const storedTripId = getStoredTripId();
+        const storedTrip = storedTripId ? trips.find((trip) => trip.id === storedTripId) : null;
+        const nextTripId = storedTrip?.id || selectedTripId || trips[0]?.id || '';
+
+        if (nextTripId !== selectedTripId) {
+          setSelectedTripId(nextTripId);
+        }
+        if (nextTripId) {
+          persistTripId(nextTripId);
         }
       } catch (err) {
         if (active) {
-          setError(err.message || 'Unable to load your trips');
+          if (isAuthError(err)) {
+            clearAuth();
+            setOwnedTrips([]);
+            setSelectedTripId('');
+            setError('');
+            setNotice('Your session expired. Sign in again to publish or copy trips.');
+            persistTripId('');
+          } else {
+            setError(err.message || 'Unable to load your trips');
+          }
         }
       } finally {
         if (active) {
@@ -224,6 +299,16 @@ export default function SharedItineraryPage() {
       return;
     }
 
+    if (selectedOwnedTripIsPublic) {
+      if (selectedOwnedTripPublicUrl) {
+        navigate(selectedOwnedTripPublicUrl, { replace: true });
+        return;
+      }
+
+      setNotice('This trip is already public');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     setNotice('');
@@ -232,15 +317,22 @@ export default function SharedItineraryPage() {
       const res = await shareTrip(selectedTripId, token);
       const publicUrl = res.data?.public_url;
       setNotice('Trip published to the public itinerary feed');
+      persistPublicUrl(selectedTripId, publicUrl);
 
       const publicRes = await getPublicItineraries(searchTerm);
       setPublicTrips(publicRes.data?.items || []);
+      persistTripId(selectedTripId);
 
       if (publicUrl) {
         navigate(publicUrl, { replace: true });
       }
     } catch (err) {
-      setError(err.message || 'Unable to publish trip');
+      if (isAuthError(err)) {
+        clearAuth();
+        setError('Your session expired. Sign in again to publish trips.');
+      } else {
+        setError(err.message || 'Unable to publish trip');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -259,7 +351,12 @@ export default function SharedItineraryPage() {
       await copySharedTrip(slug, token);
       setNotice('Trip copied into your account');
     } catch (err) {
-      setError(err.message || 'Unable to copy trip');
+      if (isAuthError(err)) {
+        clearAuth();
+        setError('Your session expired. Sign in again to copy trips.');
+      } else {
+        setError(err.message || 'Unable to copy trip');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -337,23 +434,38 @@ export default function SharedItineraryPage() {
 
           {token ? (
             <div className="shared-publish">
-              <label className="field">
-                <span className="field__label">Publish one of your trips</span>
-                <span className="field__control">
-                  <select value={selectedTripId} onChange={(event) => setSelectedTripId(event.target.value)} disabled={loadingOwned}>
-                    <option value="">Select your trip</option>
-                    {ownedTrips.map((trip) => (
-                      <option key={trip.id} value={trip.id}>
-                        {trip.title}
-                      </option>
-                    ))}
-                  </select>
-                </span>
-              </label>
+          <label className="field">
+            <span className="field__label">Publish one of your trips</span>
+            <span className="field__control">
+              <select
+                value={selectedTripId}
+                onChange={(event) => {
+                  const nextTripId = event.target.value;
+                  setSelectedTripId(nextTripId);
+                  persistTripId(nextTripId);
+                }}
+                disabled={loadingOwned}
+              >
+                <option value="">Select your trip</option>
+                {ownedTrips.map((trip) => (
+                  <option key={trip.id} value={trip.id}>
+                    {trip.title}
+                    {trip.visibility === 'public' ? ' (public)' : ''}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </label>
 
-              <button className="primary-button screen-button" type="button" onClick={handlePublishSelectedTrip} disabled={submitting || !selectedTripId}>
-                Publish Public
+              <button
+                className="primary-button screen-button"
+                type="button"
+                onClick={handlePublishSelectedTrip}
+                disabled={submitting || !selectedTripId}
+              >
+                {selectedOwnedTripIsPublic ? 'Open Public' : 'Publish Public'}
               </button>
+              {selectedOwnedTripIsPublic ? <span className="screen-pill">Already public</span> : null}
             </div>
           ) : (
             <div className="shared-login-prompt">
@@ -425,13 +537,15 @@ export default function SharedItineraryPage() {
 
           <aside className="shared-detail">
             <div className="screen-card shared-detail__card">
-              <div className="screen-card__header">
-                <div>
-                  <h2>{selectedTrip?.trip?.title || featuredTrip?.title || 'Select a public itinerary'}</h2>
-                  <p>{selectedRoute || featuredTrip?.description || 'Open a public itinerary to inspect its full plan.'}</p>
+                <div className="screen-card__header">
+                  <div>
+                    <h2>{selectedTrip?.trip?.title || featuredTrip?.title || 'Select a public itinerary'}</h2>
+                    <p>{selectedRoute || featuredTrip?.description || 'Open a public itinerary to inspect its full plan.'}</p>
+                  </div>
+                <span className="screen-pill">
+                  {selectedOwnedTripIsPublic ? 'Your public trip' : selectedTrip?.shared?.allow_copy ? 'Copyable' : 'Read only'}
+                </span>
                 </div>
-                <span className="screen-pill">{selectedTrip?.shared?.allow_copy ? 'Copyable' : 'Read only'}</span>
-              </div>
 
               {loadingDetail ? <div className="checklist-banner">Loading itinerary details...</div> : null}
 
